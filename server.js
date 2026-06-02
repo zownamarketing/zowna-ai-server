@@ -17,7 +17,7 @@ app.get("/", (req, res) => {
   });
 });
 
-// 💬 Chat route (Gemini AI)
+// 💬 Chat route (Gemini AI - FIXED)
 app.post("/chat", async (req, res) => {
   try {
     const userMessage = req.body.message;
@@ -27,7 +27,7 @@ app.post("/chat", async (req, res) => {
       {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({
           contents: [
@@ -37,38 +37,49 @@ app.post("/chat", async (req, res) => {
                   text: `
 أنت موظف ذكي في شركة ZOWNA في الأردن.
 مهمتك:
-- الرد على العملاء بطريقة احترافية ومقنعة
-- شرح خدمات تصميم المواقع، التسويق، الهوية البصرية
+- الرد على العملاء بشكل احترافي ومقنع
+- شرح خدمات تصميم المواقع والتسويق والهوية البصرية
 - هدفك إقناع العميل بالشراء
-- أسلوبك بسيط وواضح ومهني
 
 رسالة العميل:
 ${userMessage}
-                  `,
-                },
-              ],
-            },
-          ],
-        }),
+                  `
+                }
+              ]
+            }
+          ]
+        })
       }
     );
 
     const data = await response.json();
 
-    const reply =
-      data?.candidates?.[0]?.content?.parts?.[0]?.text ||
-      "ما قدرت أجاوب، حاول مرة ثانية";
+    console.log("GEMINI RESPONSE:", JSON.stringify(data));
 
-    res.json({ reply });
+    // إذا في خطأ من Gemini
+    if (!response.ok) {
+      return res.json({
+        reply: "Gemini Error: " + (data.error?.message || "Unknown error")
+      });
+    }
+
+    const reply =
+      data?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+    res.json({
+      reply: reply || "ما وصل رد من Gemini"
+    });
 
   } catch (error) {
+    console.log("SERVER ERROR:", error);
+
     res.json({
-      reply: "صار خطأ بالسيرفر"
+      reply: "خطأ بالسيرفر: " + error.message
     });
   }
 });
 
-// 🚀 PORT for Render
+// 🚀 PORT (Render)
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
