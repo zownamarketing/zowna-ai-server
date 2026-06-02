@@ -10,68 +10,48 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// 🏠 Home route
+// 🏠 Home
 app.get("/", (req, res) => {
-  res.json({
-    status: "online",
-    message: "ZOWNA AI Server is running 🚀"
-  });
+  res.json({ status: "online", message: "ZOWNA AI is running 🚀" });
 });
 
-// 💬 Chat route (Gemini FIXED + Stable Model)
+// 💬 Chat (FIXED FINAL)
 app.post("/chat", async (req, res) => {
   try {
     const userMessage = req.body.message;
 
-   const response = await axios.post(
-  `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash-latest:generateContent?key=${process.env.GEMINI_API_KEY}`,
-      {
-        contents: [
-          {
-            parts: [
-              {
-                text: `
-أنت مساعد ذكي تابع لشركة ZOWNA في الأردن.
-وظيفتك:
-- الرد بشكل احترافي ومقنع
-- شرح خدمات تصميم المواقع، التسويق، الهوية البصرية
-- هدفك مساعدة العميل وتحفيزه على الشراء
-- أسلوبك بسيط وواضح وودود
+    const url =
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" +
+      process.env.GEMINI_API_KEY;
 
-رسالة العميل:
-${userMessage}
-                `
-              }
-            ]
-          }
-        ]
-      },
-      {
-        headers: {
-          "Content-Type": "application/json"
+    const response = await axios.post(url, {
+      contents: [
+        {
+          parts: [
+            {
+              text: `أنت مساعد لشركة ZOWNA. جاوب باحتراف: ${userMessage}`
+            }
+          ]
         }
-      }
-    );
+      ]
+    });
 
     const reply =
       response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
 
-    res.json({
-      reply: reply || "ما وصل رد من Gemini"
-    });
+    res.json({ reply: reply || "ما في رد" });
 
   } catch (error) {
-    console.log("GEMINI ERROR:", error.response?.data || error.message);
+    console.log("FULL ERROR:", error.response?.data || error.message);
 
     res.json({
-      reply: "صار خطأ في Gemini: " + (error.response?.data?.error?.message || error.message)
+      reply: "Gemini Error: " + JSON.stringify(error.response?.data || error.message)
     });
   }
 });
 
-// 🚀 PORT (Render safe)
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
-  console.log(`ZOWNA AI Server running on port ${PORT}`);
+  console.log("ZOWNA AI running on port", PORT);
 });
