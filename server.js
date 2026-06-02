@@ -2,6 +2,7 @@ console.log("SERVER STARTING...");
 
 const express = require("express");
 const cors = require("cors");
+const axios = require("axios");
 require("dotenv").config();
 
 const app = express();
@@ -17,69 +18,58 @@ app.get("/", (req, res) => {
   });
 });
 
-// 💬 Chat route (Gemini AI - FIXED)
+// 💬 Chat route (Gemini FIXED + Stable Model)
 app.post("/chat", async (req, res) => {
   try {
     const userMessage = req.body.message;
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+    const response = await axios.post(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${process.env.GEMINI_API_KEY}`,
       {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                {
-                  text: `
-أنت موظف ذكي في شركة ZOWNA في الأردن.
-مهمتك:
-- الرد على العملاء بشكل احترافي ومقنع
-- شرح خدمات تصميم المواقع والتسويق والهوية البصرية
-- هدفك إقناع العميل بالشراء
+        contents: [
+          {
+            parts: [
+              {
+                text: `
+أنت مساعد ذكي تابع لشركة ZOWNA في الأردن.
+وظيفتك:
+- الرد بشكل احترافي ومقنع
+- شرح خدمات تصميم المواقع، التسويق، الهوية البصرية
+- هدفك مساعدة العميل وتحفيزه على الشراء
+- أسلوبك بسيط وواضح وودود
 
 رسالة العميل:
 ${userMessage}
-                  `
-                }
-              ]
-            }
-          ]
-        })
+                `
+              }
+            ]
+          }
+        ]
+      },
+      {
+        headers: {
+          "Content-Type": "application/json"
+        }
       }
     );
 
-    const data = await response.json();
-
-    console.log("GEMINI RESPONSE:", JSON.stringify(data));
-
-    // إذا في خطأ من Gemini
-    if (!response.ok) {
-      return res.json({
-        reply: "Gemini Error: " + (data.error?.message || "Unknown error")
-      });
-    }
-
     const reply =
-      data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
 
     res.json({
       reply: reply || "ما وصل رد من Gemini"
     });
 
   } catch (error) {
-    console.log("SERVER ERROR:", error);
+    console.log("GEMINI ERROR:", error.response?.data || error.message);
 
     res.json({
-      reply: "خطأ بالسيرفر: " + error.message
+      reply: "صار خطأ في Gemini: " + (error.response?.data?.error?.message || error.message)
     });
   }
 });
 
-// 🚀 PORT (Render)
+// 🚀 PORT (Render safe)
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
